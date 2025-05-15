@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<!-- saved from url=(0033)http://127.0.0.1:5500/index.html# -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Felix Predicts</title>
+  <style>
+    /* —— Core Styles —— */
+    body { font-family: Arial, sans-serif; margin:0; background:#121212; color:#fff; }
+    h1,h2,h3 { margin:0 0 10px; font-family: Roboto, sans-serif; }
+    header { background:#1e1e1e; text-align:center; padding:20px; }
+    header h1 { color:#f8d70b; }
+    nav { background:#2c2c2c; display:flex; justify-content:center; padding:10px; }
+    nav a { color:#fff; text-decoration:none; padding:10px 20px; margin:0 5px; font-weight:bold; transition:background .2s; }
+    nav a:hover { background:#f8d70b; color:#000; }
+    .filter-bar{background:#222;display:flex;flex-wrap:wrap;gap:15px;align-items:center;padding:15px;}
+    .filter-bar select, .filter-bar input, .filter-bar button{background:#333;color:#fff;border:none;padding:8px;border-radius:4px;}
+    .filter-bar button{cursor:pointer;} .filter-bar button:hover{background:#f8d70b;color:#000;}
+    .match-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;padding:20px;}
+    .match{background:#222;border-radius:8px;padding:15px;transition:transform .2s,box-shadow .2s;}
+    .match:hover{transform:translateY(-5px);box-shadow:0 5px 15px rgba(0,0,0,.7);}
+    .match h3{color:#f8d70b;font-size:20px;} .match time{display:block;color:#ffb84d;margin-bottom:10px;}
+    .prediction-buttons button{margin:5px;padding:8px 14px;background:#28a745;color:#fff;border:none;border-radius:4px;cursor:pointer;transition:background .2s;}
+    .prediction-buttons button:hover{background:#218838;}
+    .wallet-section{background:#222;text-align:center;padding:20px;}
+    .wallet-section input, .wallet-section button{padding:10px;margin:5px;border:none;border-radius:4px;font-size:14px;}
+    .wallet-section button{background:#f8d70b;color:#000;cursor:pointer;} .wallet-section button:hover{background:#d6b10b;}
+    .my-bets{padding:20px;background:#222;}
+    .my-bets table{width:100%;border-collapse:collapse;}
+    .my-bets th, .my-bets td{padding:8px;border:1px solid #444;text-align:center;}
+    .my-bets th{background:#333;color:#f8d70b;}
+    .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);justify-content:center;align-items:center;}
+    .modal{background:#222;padding:20px;border-radius:6px;text-align:center;}
+    .modal button{padding:8px 16px;background:#28a745;color:#fff;border:none;border-radius:4px;cursor:pointer;} 
+    .modal button:hover{background:#218838;}
+
+    /* —— Admin Panel Styles —— */
+    #admin-panel {
+      position:fixed; top:0; right:-360px; width:360px; height:100%; background:#1b1b1b;
+      box-shadow:-4px 0 12px rgba(0,0,0,.8); transition:right .3s; padding:20px; overflow-y:auto;
+    }
+    #admin-panel.open { right:0; }
+    #admin-panel h2 { color:#f8d70b; margin-bottom:10px; }
+    .tab-buttons { display:flex; gap:10px; margin-bottom:20px; }
+    .tab-buttons button {
+      flex:1; padding:10px; background:#333; color:#fff; border:none; cursor:pointer;
+    }
+    .tab-buttons button.active { background:#f8d70b; color:#000; }
+    .tab { display:none; }
+    .tab.active { display:block; }
+    .tab form { display:grid; gap:10px; }
+    .tab form input, .tab form select, .tab form button {
+      padding:8px; border-radius:4px; border:none; font-size:14px;
+    }
+    .tab form button { background:#28a745; color:#fff; cursor:pointer; }
+    .close-admin {
+      position:absolute; top:10px; left:10px; background:#f8d70b; border:none;
+      padding:6px 10px; cursor:pointer; color:#000; border-radius:4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header & Nav -->
+  <header><h1>Felix Predicts</h1></header>
+  <nav>
+    <a href="http://127.0.0.1:5500/index.html#upcoming">Upcoming</a>
+    <a href="http://127.0.0.1:5500/index.html#wallet">Wallet</a>
+    <a href="http://127.0.0.1:5500/index.html#my-bets">My Bets</a>
+    <a href="http://127.0.0.1:5500/index.html#" onclick="toggleAdmin()">Admin</a>
+  </nav>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <label>League:
+      <select id="leagueFilter"><option value="">All</option><option>Premier League</option><option>La Liga</option><option>Bundesliga</option><option>Serie A</option><option>Ligue 1</option><option>Eredivisie</option></select>
+    </label>
+    <label>Date:
+      <input type="date" id="dateFilter">
+    </label>
+    <button onclick="fetchMatches()">Refresh</button>
+  </div>
+
+  <!-- Upcoming Matches -->
+  <div id="upcoming"><h2 style="padding:20px;">Today's Matches</h2><div id="matches" class="match-container"><div class="match">
+          <h3>Arsenal vs Chelsea</h3>
+          <time>15:00</time>
+          <div class="prediction-buttons">
+            <button onclick="prepareBet(&#39;Arsenal vs Chelsea&#39;,&#39;Home&#39;,2.5,&#39;15:00&#39;)">Home (2.5)</button>
+            <button onclick="prepareBet(&#39;Arsenal vs Chelsea&#39;,&#39;Draw&#39;,3.2,&#39;15:00&#39;)">Draw (3.2)</button>
+            <button onclick="prepareBet(&#39;Arsenal vs Chelsea&#39;,&#39;Away&#39;,2,&#39;15:00&#39;)">Away (2)</button>
+          </div></div><div class="match">
+          <h3>Liverpool vs Man City</h3>
+          <time>17:30</time>
+          <div class="prediction-buttons">
+            <button onclick="prepareBet(&#39;Liverpool vs Man City&#39;,&#39;Home&#39;,2.1,&#39;17:30&#39;)">Home (2.1)</button>
+            <button onclick="prepareBet(&#39;Liverpool vs Man City&#39;,&#39;Draw&#39;,3.4,&#39;17:30&#39;)">Draw (3.4)</button>
+            <button onclick="prepareBet(&#39;Liverpool vs Man City&#39;,&#39;Away&#39;,1.9,&#39;17:30&#39;)">Away (1.9)</button>
+          </div></div><div class="match">
+          <h3>Real Madrid vs Barcelona</h3>
+          <time>18:00</time>
+          <div class="prediction-buttons">
+            <button onclick="prepareBet(&#39;Real Madrid vs Barcelona&#39;,&#39;Home&#39;,2.1,&#39;18:00&#39;)">Home (2.1)</button>
+            <button onclick="prepareBet(&#39;Real Madrid vs Barcelona&#39;,&#39;Draw&#39;,3.5,&#39;18:00&#39;)">Draw (3.5)</button>
+            <button onclick="prepareBet(&#39;Real Madrid vs Barcelona&#39;,&#39;Away&#39;,1.9,&#39;18:00&#39;)">Away (1.9)</button>
+          </div></div><div class="match">
+          <h3>Bayern vs Dortmund</h3>
+          <time>16:00</time>
+          <div class="prediction-buttons">
+            <button onclick="prepareBet(&#39;Bayern vs Dortmund&#39;,&#39;Home&#39;,1.7,&#39;16:00&#39;)">Home (1.7)</button>
+            <button onclick="prepareBet(&#39;Bayern vs Dortmund&#39;,&#39;Draw&#39;,3.6,&#39;16:00&#39;)">Draw (3.6)</button>
+            <button onclick="prepareBet(&#39;Bayern vs Dortmund&#39;,&#39;Away&#39;,4,&#39;16:00&#39;)">Away (4)</button>
+          </div></div></div></div>
+
+  <!-- Wallet -->
+  <div id="wallet" class="wallet-section">
+    <h2>Wallet Balance: Ksh <span id="wallet-balance">1000</span></h2>
+    <input type="number" id="stake" placeholder="Stake Amount">
+    <button onclick="placeBet()">Place Bet</button>
+    <button onclick="depositFunds()">Deposit</button>
+    <button onclick="withdrawFunds()">Withdraw</button>
+  </div>
+
+  <!-- My Bets -->
+  <div id="my-bets" class="my-bets">
+    <h2>My Bets</h2>
+    <table><thead><tr><th>Match</th><th>Prediction</th><th>Stake</th><th>Odds</th><th>Time</th></tr></thead>
+    <tbody id="bets-history"></tbody></table>
+  </div>
+
+  <!-- Bet Modal -->
+  <div class="modal-bg" id="bet-modal">
+    <div class="modal">
+      <h3>Bet Placed!</h3>
+      <p id="bet-details"></p>
+      <button onclick="closeModal()">OK</button>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="admin-panel" class="">
+    <button class="close-admin" onclick="toggleAdmin()">Close</button>
+    <div class="tab-buttons">
+      <button id="tab-leagues-btn" class="active" onclick="showTab(&#39;leagues&#39;)">Leagues</button>
+      <button id="tab-matches-btn" onclick="showTab(&#39;matches&#39;)">Matches</button>
+    </div>
+    <div id="tab-leagues" class="tab active">
+      <h2>Manage Leagues</h2>
+      <form onsubmit="addLeague(event)">
+        <input type="text" id="newLeagueName" placeholder="League Name" required="">
+        <input type="url" id="newLeagueLogo" placeholder="Logo URL" required="">
+        <button type="submit">Add League</button>
+      </form>
+      <ul id="leagues-list"><li><img src="./Felix Predicts_files/1200px-Premier_League_Logo_2016.svg.png" width="20"> Premier League</li><li><img src="./Felix Predicts_files/La_Liga_Logo.svg" width="20"> La Liga</li><li><img src="./Felix Predicts_files/Bundesliga_Logo.svg" width="20"> Bundesliga</li><li><img src="./Felix Predicts_files/1200px-Serie_A_Logo_2018.svg.png" width="20"> Serie A</li><li><img src="./Felix Predicts_files/1200px-Ligue_1_logo_2018.svg.png" width="20"> Ligue 1</li><li><img src="./Felix Predicts_files/Primeira_Liga_logo.svg" width="20"> Eredivisie</li></ul>
+    </div>
+    <div id="tab-matches" class="tab">
+      <h2>Manage Matches</h2>
+      <form onsubmit="addMatch(event)">
+        <input type="text" id="homeTeam" placeholder="Home Team" required="">
+        <input type="text" id="awayTeam" placeholder="Away Team" required="">
+        <select id="matchLeague" required=""><option>Premier League</option><option>La Liga</option><option>Bundesliga</option><option>Serie A</option><option>Ligue 1</option><option>Eredivisie</option></select>
+        <input type="time" id="matchTime" required="">
+        <input type="number" id="oddsHome" placeholder="Odds Home" step="0.1" required="">
+        <input type="number" id="oddsDraw" placeholder="Odds Draw" step="0.1" required="">
+        <input type="number" id="oddsAway" placeholder="Odds Away" step="0.1" required="">
+        <button type="submit">Add Match</button>
+      </form>
+      <ul id="matches-list"></ul>
+    </div>
+  </div>
+
+  <script>
+    // Data stores
+    let allLeagues = [
+      {name:'Premier League',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Premier_League_Logo_2016.svg/1200px-Premier_League_Logo_2016.svg.png'},
+      {name:'La Liga',logo:'https://upload.wikimedia.org/wikipedia/commons/f/f7/La_Liga_Logo.svg'},
+      {name:'Bundesliga',logo:'https://upload.wikimedia.org/wikipedia/commons/1/1b/Bundesliga_Logo.svg'},
+      {name:'Serie A',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Serie_A_Logo_2018.svg/1200px-Serie_A_Logo_2018.svg.png'},
+      {name:'Ligue 1',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Ligue_1_logo_2018.svg/1200px-Ligue_1_logo_2018.svg.png'},
+      {name:'Eredivisie',logo:'https://upload.wikimedia.org/wikipedia/commons/7/7f/Primeira_Liga_logo.svg'}
+    ];
+    let allMatches = [];
+    let walletBalance = 1000, bets = [];
+
+    // Init date filter
+    document.getElementById('dateFilter').valueAsDate = new Date();
+
+    // Populate league dropdowns & list
+    function refreshLeaguesUI(){
+      const filter=document.getElementById('leagueFilter'),
+            matchSel=document.getElementById('matchLeague'),
+            list=document.getElementById('leagues-list');
+      filter.innerHTML='<option value="">All</option>';
+      matchSel.innerHTML='';
+      list.innerHTML='';
+      allLeagues.forEach(l=>{
+        filter.innerHTML+=`<option>${l.name}</option>`;
+        matchSel.innerHTML+=`<option>${l.name}</option>`;
+        list.innerHTML+=`<li><img src="${l.logo}" width="20"> ${l.name}</li>`;
+      });
+    }
+
+    // Fetch/render matches
+    function fetchMatches(){
+      const league=document.getElementById('leagueFilter').value;
+      const demo = allMatches.filter(m=>!league||m.league===league);
+      renderMatches(demo);
+    }
+    function renderMatches(arr){
+      const c=document.getElementById('matches'); c.innerHTML='';
+      arr.forEach(m=>{
+        const d=document.createElement('div'); d.className='match';
+        d.innerHTML=`
+          <h3>${m.home} vs ${m.away}</h3>
+          <time>${m.time}</time>
+          <div class="prediction-buttons">
+            <button onclick="prepareBet('${m.home} vs ${m.away}','Home',${m.odds.home},'${m.time}')">Home (${m.odds.home})</button>
+            <button onclick="prepareBet('${m.home} vs ${m.away}','Draw',${m.odds.draw},'${m.time}')">Draw (${m.odds.draw})</button>
+            <button onclick="prepareBet('${m.home} vs ${m.away}','Away',${m.odds.away},'${m.time}')">Away (${m.odds.away})</button>
+          </div>`;
+        c.appendChild(d);
+      });
+    }
+
+    // Betting logic
+    function prepareBet(match,pred,odds,time){
+      const stake=+document.getElementById('stake').value;
+      if(!stake||stake>walletBalance){return alert('Invalid stake');}
+      walletBalance-=stake;
+      document.getElementById('wallet-balance').textContent=walletBalance;
+      bets.push({match,pred,stake,odds,time});
+      updateHistory();
+      document.getElementById('bet-details').textContent=
+        `${match} – ${pred} @ ${odds} for Ksh ${stake} (${time})`;
+      document.getElementById('bet-modal').style.display='flex';
+    }
+    function updateHistory(){
+      const tb=document.getElementById('bets-history'); tb.innerHTML='';
+      bets.forEach(b=>tb.innerHTML+=`<tr>
+        <td>${b.match}</td><td>${b.pred}</td><td>${b.stake}</td><td>${b.odds}</td><td>${b.time}</td>
+      </tr>`);
+    }
+    function closeModal(){document.getElementById('bet-modal').style.display='none';}
+    function placeBet(){}
+
+    // Deposit/withdraw
+    window.depositFunds = ()=>{const v=+prompt('Deposit amount?'); if(v>0){walletBalance+=v;document.getElementById('wallet-balance').textContent=walletBalance;}};
+    window.withdrawFunds = ()=>{const v=+prompt('Withdraw amount?'); if(v>0&&v<=walletBalance){walletBalance-=v;document.getElementById('wallet-balance').textContent=walletBalance;}};
+
+    // Admin panel toggles & tabs
+    function toggleAdmin(){document.getElementById('admin-panel').classList.toggle('open');}
+    function showTab(id){
+      ['leagues','matches'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===id));
+      ['tab-leagues-btn','tab-matches-btn'].forEach(btn=>document.getElementById(btn).classList.toggle('active',btn===`tab-${id}-btn`));
+    }
+
+    // Admin actions
+    function addLeague(e){
+      e.preventDefault();
+      allLeagues.push({name:document.getElementById('newLeagueName').value, logo:document.getElementById('newLeagueLogo').value});
+      refreshLeaguesUI();
+      e.target.reset();
+    }
+    function addMatch(e){
+      e.preventDefault();
+      allMatches.push({
+        home:document.getElementById('homeTeam').value,
+        away:document.getElementById('awayTeam').value,
+        league:document.getElementById('matchLeague').value,
+        time:document.getElementById('matchTime').value,
+        odds:{
+          home:+document.getElementById('oddsHome').value,
+          draw:+document.getElementById('oddsDraw').value,
+          away:+document.getElementById('oddsAway').value
+        }
+      });
+      fetchMatches();
+      e.target.reset();
+    }
+
+    // Initialization
+    refreshLeaguesUI();
+    // Seed example matches
+    allMatches = [
+      {home:'Arsenal', away:'Chelsea', league:'Premier League', time:'15:00', odds:{home:2.5,draw:3.2,away:2.0}},
+      {home:'Liverpool', away:'Man City', league:'Premier League', time:'17:30', odds:{home:2.1,draw:3.4,away:1.9}},
+      {home:'Real Madrid', away:'Barcelona', league:'La Liga', time:'18:00', odds:{home:2.1,draw:3.5,away:1.9}},
+      {home:'Bayern', away:'Dortmund', league:'Bundesliga', time:'16:00', odds:{home:1.7,draw:3.6,away:4.0}}
+    ];
+    fetchMatches();
+  </script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+
+
+</body></html>
